@@ -1,0 +1,731 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1020">
+<title>Messenger Admin</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+:root {
+  --bg:#0b1020;
+  --panel:#121a2c;
+  --panel2:#19243a;
+  --text:#f4f6fc;
+  --muted:#8e9bb2;
+  --blue:#4285f4;
+  --border:#ffffff12;
+  --green:#24c78a;
+  --red:#f05b68;
+}
+body.light {
+  --bg:#f3f6fb;
+  --panel:#ffffff;
+  --panel2:#edf2f9;
+  --text:#172033;
+  --muted:#718096;
+  --border:#17203316;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,Arial,sans-serif;
+  min-height:100vh;
+}
+button,input {font:inherit}
+button {cursor:pointer}
+.layout {
+  display:flex;
+  min-height:100vh;
+}
+.sidebar {
+  width:250px;
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  padding:25px 17px;
+  position:fixed;
+  inset:0 auto 0 0;
+}
+.brand {
+  font-size:21px;
+  font-weight:850;
+  letter-spacing:1px;
+  margin:5px 12px 38px;
+}
+.brand span {color:var(--blue)}
+.nav-label {
+  color:var(--muted);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  margin:25px 12px 12px;
+}
+.nav {
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:13px;
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  border-radius:12px;
+  margin-bottom:5px;
+  text-align:left;
+}
+.nav.active {
+  color:var(--blue);
+  background:#4285f418;
+}
+.nav:hover {background:var(--panel2)}
+.main {
+  margin-left:250px;
+  width:calc(100% - 250px);
+  padding:30px;
+}
+.topbar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  margin-bottom:30px;
+}
+.topbar h1 {font-size:27px;margin:0 0 7px}
+.muted {color:var(--muted)}
+.top-actions {display:flex;gap:10px}
+.icon-btn,.primary-btn,.secondary-btn {
+  border:1px solid var(--border);
+  border-radius:11px;
+  padding:11px 14px;
+  background:var(--panel);
+  color:var(--text);
+}
+.primary-btn {
+  background:var(--blue);
+  border-color:var(--blue);
+  color:white;
+}
+.stats {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:16px;
+  margin-bottom:25px;
+}
+.card {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:17px;
+  padding:21px;
+  min-width:0;
+}
+.stat-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:var(--muted);
+  font-size:13px;
+}
+.stat-icon {
+  width:38px;height:38px;
+  border-radius:12px;
+  display:grid;place-items:center;
+  background:#4285f41a;
+  color:var(--blue);
+}
+.stat-value {
+  font-size:30px;
+  font-weight:800;
+  margin-top:17px;
+}
+.section {
+  display:none;
+}
+.section.active {display:block}
+.section-title {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:0 0 18px;
+  gap:12px;
+}
+.section-title h2 {font-size:19px;margin:0}
+.toolbar {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:17px;
+}
+.search {
+  flex:1;
+  min-width:180px;
+  padding:13px 15px;
+  border:1px solid var(--border);
+  background:var(--panel);
+  color:var(--text);
+  border-radius:11px;
+  outline:none;
+}
+.search:focus {border-color:var(--blue)}
+.table-wrap {
+  overflow-x:auto;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+}
+table {
+  width:100%;
+  border-collapse:collapse;
+  min-width:650px;
+}
+th,td {
+  padding:15px 17px;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+  font-size:13px;
+}
+th {
+  color:var(--muted);
+  font-weight:700;
+  background:var(--panel2);
+}
+tr:last-child td {border-bottom:0}
+.profile {
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
+.avatar {
+  width:39px;height:39px;
+  border-radius:50%;
+  background:var(--panel2);
+  object-fit:cover;
+  display:grid;
+  place-items:center;
+  font-weight:700;
+}
+.status {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+}
+.dot {
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--muted);
+}
+.dot.online {background:var(--green)}
+.empty {
+  padding:35px;
+  text-align:center;
+  color:var(--muted);
+}
+.message {
+  margin-bottom:16px;
+  padding:14px;
+  background:var(--panel2);
+  border-radius:12px;
+  font-size:13px;
+}
+.hidden {display:none!important}
+#login {
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+.login-card {
+  width:min(420px,100%);
+  padding:30px;
+  border-radius:20px;
+  background:var(--panel);
+  border:1px solid var(--border);
+}
+.login-card h1 {margin-top:0}
+.login-card input {
+  width:100%;
+  padding:14px;
+  margin:8px 0 14px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--panel2);
+  color:var(--text);
+}
+.login-card button {width:100%;padding:14px}
+.error {color:var(--red);font-size:13px;margin-top:12px}
+@media(max-width:950px) {
+  .stats {grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:650px) {
+  .sidebar {
+    width:65px;
+    padding:18px 7px;
+  }
+  .brand {font-size:0;margin:5px 5px 35px}
+  .brand span {font-size:20px}
+  .nav {justify-content:center;padding:13px 5px}
+  .nav span,.nav-label {display:none}
+  .main {
+    margin-left:65px;
+    width:calc(100% - 65px);
+    padding:17px 12px;
+  }
+  .stats {gap:9px}
+  .card {padding:14px}
+  .stat-value {font-size:23px}
+  .topbar h1 {font-size:22px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="login">
+  <div class="login-card">
+    <h1>Messenger Admin</h1>
+    <p class="muted">Administrator sign in</p>
+
+    <label>Email address</label>
+    <input id="email" type="email" placeholder="Admin email">
+
+    <label>Password</label>
+    <input id="password" type="password" placeholder="Password">
+
+    <button class="primary-btn" id="loginBtn" onclick="login()">
+      Sign in
+    </button>
+
+    <div id="loginError" class="error"></div>
+  </div>
+</div>
+
+<div id="dashboard" class="hidden">
+<div class="layout">
+
+<aside class="sidebar">
+  <div class="brand">MESSENGER<span>.</span></div>
+
+  <div class="nav-label">MAIN MENU</div>
+
+  <button class="nav active" onclick="showPage('overview',this)">
+    <i data-lucide="layout-dashboard"></i><span>Overview</span>
+  </button>
+
+  <button class="nav" onclick="showPage('accounts',this)">
+    <i data-lucide="users"></i><span>Accounts</span>
+  </button>
+
+  <button class="nav" onclick="showPage('activity',this)">
+    <i data-lucide="activity"></i><span>Activity</span>
+  </button>
+
+  <button class="nav" onclick="showPage('reports',this)">
+    <i data-lucide="shield-alert"></i><span>Reports</span>
+  </button>
+
+  <div class="nav-label">SYSTEM</div>
+
+  <button class="nav" onclick="toggleTheme()">
+    <i data-lucide="sun-moon"></i><span>Change theme</span>
+  </button>
+
+  <button class="nav" onclick="logout()">
+    <i data-lucide="log-out"></i><span>Sign out</span>
+  </button>
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+  <div>
+    <h1 id="pageTitle">Overview</h1>
+    <div class="muted">Messenger administration</div>
+  </div>
+  <div class="top-actions">
+    <button class="icon-btn" onclick="loadDashboard()" title="Refresh">
+      <i data-lucide="refresh-cw"></i>
+    </button>
+  </div>
+</header>
+
+<section id="overview" class="section active">
+  <div class="stats">
+    <div class="card">
+      <div class="stat-head">
+        Total accounts
+        <span class="stat-icon"><i data-lucide="users"></i></span>
+      </div>
+      <div class="stat-value" id="totalAccounts">—</div>
+    </div>
+
+    <div class="card">
+      <div class="stat-head">
+        Online users
+        <span class="stat-icon"><i data-lucide="activity"></i></span>
+      </div>
+      <div class="stat-value" id="onlineUsers">—</div>
+    </div>
+
+    <div class="card">
+      <div class="stat-head">
+        Offline users
+        <span class="stat-icon"><i data-lucide="user-minus"></i></span>
+      </div>
+      <div class="stat-value" id="offlineUsers">—</div>
+    </div>
+
+    <div class="card">
+      <div class="stat-head">
+        Total messages
+        <span class="stat-icon"><i data-lucide="message-circle"></i></span>
+      </div>
+      <div class="stat-value" id="totalMessages">—</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Recent accounts</h2>
+      <button class="secondary-btn" onclick="showPage('accounts')">
+        View all
+      </button>
+    </div>
+    <div id="recentAccounts" class="muted">Loading accounts...</div>
+  </div>
+</section>
+
+<section id="accounts" class="section">
+  <div class="section-title">
+    <h2>Registered accounts</h2>
+    <span class="muted" id="accountCount">0 accounts</span>
+  </div>
+
+  <div class="toolbar">
+    <input class="search" id="accountSearch"
+      placeholder="Search username or display name..."
+      oninput="renderAccounts()">
+    <button class="secondary-btn" onclick="loadDashboard()">
+      Refresh
+    </button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ACCOUNT</th>
+          <th>USERNAME</th>
+          <th>STATUS</th>
+          <th>LAST SEEN</th>
+          <th>REGISTERED</th>
+        </tr>
+      </thead>
+      <tbody id="accountsBody">
+        <tr><td colspan="5" class="empty">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="muted" id="accountLimit"></p>
+</section>
+
+<section id="activity" class="section">
+  <div class="section-title"><h2>Account activity</h2></div>
+  <div class="card">
+    <p>Online users: <strong id="activityOnline">—</strong></p>
+    <p>Offline users: <strong id="activityOffline">—</strong></p>
+    <p>Total messages: <strong id="activityMessages">—</strong></p>
+    <p class="muted">
+      Online status is based on the last-seen timestamp.
+    </p>
+  </div>
+</section>
+
+<section id="reports" class="section">
+  <div class="section-title"><h2>Reports and moderation</h2></div>
+  <div class="card">
+    <p>Report management is not connected yet.</p>
+    <p class="muted">
+      We'll add a reports database and moderation tools in a later step.
+    </p>
+  </div>
+</section>
+
+<div id="dashboardError" class="error"></div>
+
+</main>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://ixttoxcoszadpmawccuf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_69nhwCbffOndwKFo4pMyDQ_KxsZDyWK";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+const ADMIN_API = SUPABASE_URL + "/functions/v1/admin-api";
+let accounts = [];
+let statistics = {};
+
+function icons() {
+  if (window.lucide) lucide.createIcons();
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("light");
+  localStorage.setItem(
+    "admin-theme",
+    document.body.classList.contains("light") ? "light" : "dark"
+  );
+}
+
+if (localStorage.getItem("admin-theme") === "light") {
+  document.body.classList.add("light");
+}
+
+function showPage(page, button) {
+  document.querySelectorAll(".section").forEach(section => {
+    section.classList.remove("active");
+  });
+
+  document.getElementById(page).classList.add("active");
+
+  document.querySelectorAll(".nav").forEach(nav => {
+    nav.classList.remove("active");
+  });
+
+  if (button) button.classList.add("active");
+
+  const titles = {
+    overview:"Overview",
+    accounts:"Accounts",
+    activity:"Activity",
+    reports:"Reports"
+  };
+
+  document.getElementById("pageTitle").textContent = titles[page];
+}
+
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const error = document.getElementById("loginError");
+  const button = document.getElementById("loginBtn");
+
+  error.textContent = "";
+
+  if (!email || !password) {
+    error.textContent = "Enter your email and password.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Signing in...";
+
+  try {
+    const { data, error: loginError } =
+      await db.auth.signInWithPassword({ email, password });
+
+    if (loginError) throw loginError;
+
+    if (data.user.id !==
+      "780dfc2e-fc95-414a-95e8-69be0c0068f7") {
+      await db.auth.signOut();
+      throw new Error("This account is not authorised as an administrator.");
+    }
+
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+
+    await loadDashboard();
+  } catch (e) {
+    error.textContent = e.message || "Sign in failed.";
+  } finally {
+    button.disabled = false;
+    button.textContent = "Sign in";
+  }
+
+  icons();
+}
+
+async function logout() {
+  await db.auth.signOut();
+  accounts = [];
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("login").classList.remove("hidden");
+}
+
+async function loadDashboard() {
+  const errorBox = document.getElementById("dashboardError");
+  errorBox.textContent = "";
+
+  try {
+    const { data: sessionData } = await db.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    if (!token) throw new Error("Please sign in again.");
+
+    const response = await fetch(ADMIN_API, {
+      method:"GET",
+      headers:{
+        "Authorization":"Bearer " + token,
+        "apikey":SUPABASE_KEY
+      }
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Could not load dashboard.");
+    }
+
+    accounts = result.accounts || [];
+    statistics = result.statistics || {};
+
+    document.getElementById("totalAccounts").textContent =
+      statistics.total_accounts ?? 0;
+
+    document.getElementById("onlineUsers").textContent =
+      statistics.online_users ?? 0;
+
+    document.getElementById("offlineUsers").textContent =
+      statistics.offline_users ?? 0;
+
+    document.getElementById("totalMessages").textContent =
+      statistics.total_messages ?? 0;
+
+    document.getElementById("activityOnline").textContent =
+      statistics.online_users ?? 0;
+
+    document.getElementById("activityOffline").textContent =
+      statistics.offline_users ?? 0;
+
+    document.getElementById("activityMessages").textContent =
+      statistics.total_messages ?? 0;
+
+    document.getElementById("accountLimit").textContent =
+      "Showing up to " + (result.account_limit || 100) + " accounts.";
+
+    renderAccounts();
+    renderRecent();
+
+  } catch (e) {
+    errorBox.textContent = e.message;
+  }
+
+  icons();
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
+  })[char]);
+}
+
+function dateText(value) {
+  if (!value) return "Not available";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not available";
+  return date.toLocaleString();
+}
+
+function renderAccounts() {
+  const search = (
+    document.getElementById("accountSearch")?.value || ""
+  ).toLowerCase();
+
+  const filtered = accounts.filter(account => {
+    const name = (account.display_name || "").toLowerCase();
+    const username = (account.username || "").toLowerCase();
+    return name.includes(search) || username.includes(search);
+  });
+
+  document.getElementById("accountCount").textContent =
+    filtered.length + " accounts";
+
+  const body = document.getElementById("accountsBody");
+
+  if (!filtered.length) {
+    body.innerHTML =
+      '<tr><td colspan="5" class="empty">No matching accounts.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = filtered.map(account => {
+    const name = escapeHTML(account.display_name || "Unnamed user");
+    const username = escapeHTML(account.username || "—");
+    const online = account.is_online;
+    const avatar = account.avatar_url
+      ? '<img class="avatar" src="' +
+        escapeHTML(account.avatar_url) + '" alt="">'
+      : '<div class="avatar">' +
+        escapeHTML(name.charAt(0).toUpperCase()) + '</div>';
+
+    return `
+      <tr>
+        <td>
+          <div class="profile">
+            ${avatar}
+            <span>${name}</span>
+          </div>
+        </td>
+        <td>@${username}</td>
+        <td>
+          <span class="status">
+            <span class="dot ${online ? "online" : ""}"></span>
+            ${online ? "Online" : "Offline"}
+          </span>
+        </td>
+        <td>${escapeHTML(dateText(account.last_seen))}</td>
+        <td>${escapeHTML(dateText(account.created_at))}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderRecent() {
+  const recent = accounts.slice(0,5);
+  const container = document.getElementById("recentAccounts");
+
+  if (!recent.length) {
+    container.textContent = "No accounts found.";
+    return;
+  }
+
+  container.innerHTML = recent.map(account => `
+    <div class="profile" style="padding:10px 0">
+      <div class="avatar">
+        ${escapeHTML(
+          (account.display_name || "?").charAt(0).toUpperCase()
+        )}
+      </div>
+      <div>
+        <div>${escapeHTML(account.display_name || "Unnamed user")}</div>
+        <small class="muted">@${escapeHTML(account.username || "—")}</small>
+      </div>
+    </div>
+  `).join("");
+}
+
+db.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_OUT" || !session) {
+    document.getElementById("dashboard").classList.add("hidden");
+    document.getElementById("login").classList.remove("hidden");
+  }
+});
+
+icons();
+</script>
+</body>
+</html>
